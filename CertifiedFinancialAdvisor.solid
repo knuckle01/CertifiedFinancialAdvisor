@@ -1,0 +1,58 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract CertifiedFinancialAdvisor {
+    // Структура для хранения информации о консультанте
+    struct Advisor {
+        string name;   // Имя консультанта
+        string email;  // Email консультанта
+        uint256 registeredAt; // Время регистрации
+        bool isRegistered; // Статус регистрации
+    }
+
+    // Маппинг для хранения консультантов по их адресу
+    mapping(address => Advisor) public advisors;
+
+    // Событие, которое срабатывает при регистрации нового консультанта
+    event AdvisorRegistered(address indexed advisorAddress, string name, string email);
+
+    // Событие для обновления данных консультанта
+    event AdvisorUpdated(address indexed advisorAddress, string name, string email);
+
+    // Модификатор для проверки, что только зарегистрированный консультант может обновить свои данные
+    modifier onlyRegisteredAdvisor() {
+        require(advisors[msg.sender].isRegistered, "You must be a registered advisor.");
+        _;
+    }
+
+    // Функция для регистрации нового консультанта
+    function registerAdvisor(string memory _name, string memory _email) public {
+        require(!advisors[msg.sender].isRegistered, "Advisor is already registered.");
+
+        advisors[msg.sender] = Advisor({
+            name: _name,
+            email: _email,
+            registeredAt: block.timestamp,
+            isRegistered: true
+        });
+
+        emit AdvisorRegistered(msg.sender, _name, _email);
+    }
+
+    // Функция для обновления данных консультанта
+    function updateAdvisor(string memory _name, string memory _email) public onlyRegisteredAdvisor {
+        Advisor storage advisor = advisors[msg.sender];
+
+        advisor.name = _name;
+        advisor.email = _email;
+
+        emit AdvisorUpdated(msg.sender, _name, _email);
+    }
+
+    // Функция для получения данных консультанта
+    function getAdvisor() public view returns (string memory, string memory, uint256) {
+        Advisor memory advisor = advisors[msg.sender];
+        require(advisor.isRegistered, "Advisor is not registered.");
+        return (advisor.name, advisor.email, advisor.registeredAt);
+    }
+}
